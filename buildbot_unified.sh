@@ -59,6 +59,7 @@ prep_build() {
 
     echo "Setting up build environment"
     source build/envsetup.sh &> /dev/null
+    source vendor/lineage/vars/aosp_target_release
     mkdir -p ~/build-output
     echo ""
 
@@ -102,7 +103,7 @@ build_treble() {
         ("64GN") TARGET=gsi_arm64_gN;;
         (*) echo "Invalid target - exiting"; exit 1;;
     esac
-    lunch lineage_${TARGET}-userdebug
+    lunch lineage_${TARGET}-${aosp_target_release}-userdebug
     make installclean
     make -j$(lscpu -b -p=Core,Socket | grep -v '^#' | sort -u | wc -l) systemimage
     mv $OUT/system.img ~/build-output/lineage-21.0-$BUILD_DATE-UNOFFICIAL-${TARGET}$(${PERSONAL} && echo "-personal" || echo "").img
@@ -114,6 +115,7 @@ then
     echo ""
     echo "Setting up build environment"
     source build/envsetup.sh &> /dev/null
+    source vendor/lineage/vars/aosp_target_release
     echo ""
 else
     prep_build
