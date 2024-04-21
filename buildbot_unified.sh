@@ -62,15 +62,14 @@ prep_build() {
     mkdir -p ~/build-output
     echo ""
 
-    repopick -Q "(status:open+AND+NOT+is:wip)+(label:Code-Review>=0+AND+label:Verified>=0)+project:LineageOS/android_packages_apps_Trebuchet+branch:lineage-19.1+NOT+332083"
-    repopick -t twelve-burnin
-    repopick 321337 -f # Deprioritize important developer notifications
-    repopick 321338 -f # Allow disabling important developer notifications
-    repopick 321339 -f # Allow disabling USB notifications
-    repopick 329229 -f # Alter model name to avoid SafetyNet HW attestation enforcement
-    repopick 329230 -f # keystore: Block key attestation for SafetyNet
-    repopick 331534 -f # SystemUI: Add support to add/remove QS tiles with one tap
-    repopick 331791 -f # Skip checking SystemUI's permission for observing sensor privacy
+    repopick -t twelve-burnin -r -f
+    repopick 321337 -r -f # Deprioritize important developer notifications
+    repopick 321338 -r -f # Allow disabling important developer notifications
+    repopick 321339 -r -f # Allow disabling USB notifications
+    repopick 329229 -r -f # Alter model name to avoid SafetyNet HW attestation enforcement
+    repopick 329230 -r -f # keystore: Block key attestation for SafetyNet
+    repopick 331534 -r -f # SystemUI: Add support to add/remove QS tiles with one tap
+    repopick 331791 -r -f # Skip checking SystemUI's permission for observing sensor privacy
 }
 
 apply_patches() {
@@ -96,13 +95,21 @@ finalize_treble() {
     git clean -fdx
     bash generate.sh lineage
     cd ../../..
+    cd treble_app
+    bash build.sh release
+    cp TrebleApp.apk ../vendor/hardware_overlay/TrebleApp/app.apk
+    cd ..
+    cd vendor/hardware_overlay
+    git add TrebleApp/app.apk
+    git commit -m "[TEMP] Up TrebleApp to $BUILD_DATE"
+    cd ../..
 }
 
 build_device() {
     if [ ${1} == "arm64" ]
     then
         lunch lineage_arm64-userdebug
-        make -j$(nproc --all) systemimage
+        make -j$(lscpu -b -p=Core,Socket | grep -v '^#' | sort -u | wc -l) systemimage
         mv $OUT/system.img ~/build-output/lineage-19.1-$BUILD_DATE-UNOFFICIAL-arm64$(${PERSONAL} && echo "-personal" || echo "").img
     else
         brunch ${1}
